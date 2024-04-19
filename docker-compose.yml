@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  bmp-proxy:
+    image: ghcr.io/krmahadevan/bmp_docker:main
+    container_name: bmp-proxy
+    ports:
+      - "8080:8080" # The port on which the App server runs and responds the BrowserMobProxy REST Calls
+      - "8081:8081" # This is the port of the actual proxy server backed by BrowserMobProxy
+  worker:
+    image: ghcr.io/krmahadevan/worker:main
+    ports:
+      - "10020:10020"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod    
+  master:
+    image: ghcr.io/krmahadevan/master:main
+    depends_on:
+      - worker
+      - bmp-proxy
+    ports:
+      - "10010:10010"
+    environment:
+      - APPLICATION_WORKER_ADDRESS=http://worker:10020
+      - SPRING_PROFILES_ACTIVE=prod
+      - JAVA_TOOL_OPTIONS=
+          -Dhttp.proxyHost=bmp-proxy
+          -Dhttp.proxyPort=8081
